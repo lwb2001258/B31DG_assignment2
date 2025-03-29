@@ -12,6 +12,7 @@ class B31DGCyclicExecutiveMonitor {
 private:
 
     boolean bActive = false;
+    // unsigned long now = micros();
 
     unsigned long timeStart = 0;  
     unsigned long timeRelease[NUMBER_TASKS];
