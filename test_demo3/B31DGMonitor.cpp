@@ -61,8 +61,11 @@ void B31DGCyclicExecutiveMonitor::jobEnded(int taskNumber) {
   }
 
   if ((now - this->timeStart) > TEST_TIME) {
-    this->printSummary();
-    exit(0);
+    if (!(this->hasPrinted)) {
+      this->hasPrinted=true;
+      this->printSummary();
+      exit(0);
+    }
   }
 
   this->counterJobs[taskNumber]++;
@@ -92,7 +95,7 @@ void B31DGCyclicExecutiveMonitor::printSummary() {
     Serial.print(this->timeFirstBegin[i]);
     Serial.print(" to ");
     Serial.println(this->timeFirstEnd[i]);
-    Serial.flush(); 
+    Serial.flush();
   }
 }
 
