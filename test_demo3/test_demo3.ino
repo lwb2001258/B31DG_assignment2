@@ -85,39 +85,41 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLDOWN);
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressedHandle, RISING);
   // ticker1.attach_ms(1, frame);
-  xTaskCreatePinnedToCore(
-    frameTask,    
-    "FrameTask",  
-    2048,         
-    NULL,         
-    1,            
-    NULL,       
-    0            
-  );
+  xTaskCreatePinnedToCore(frameTask,"FrameTask",2048,NULL, 1, NULL,  0);
+  // xTaskCreatePinnedToCore(doJob,"doJob0",2048,NULL, 1, NULL,  0);
+  // xTaskCreatePinnedToCore(doJob,"doJob1",2048,NULL, 1, NULL,  1);
   monitor.startMonitoring();
+ 
 }
 
 void loop() {
+  // xTaskCreatePinnedToCore(doJob,"doJob0",2048,NULL, 1, NULL,  0);
+  xTaskCreatePinnedToCore(doJob,"doJob1",2048,NULL, 1, NULL,  1);
+
+}
+void doJob(void* pvParameters) {
   // put your main code here, to run repeatedly:
-  int jobIndex = 10;
+  // while (1) {
+    int jobIndex = 10;
 
 
-  for (int i = 0; i < 5; i++) {
-    if (!doneList[i]) {
-      if (deadlines[i] < deadlines[jobIndex]) {
-        jobIndex = i;
+    for (int i = 0; i < 5; i++) {
+      if (!doneList[i]) {
+        if (deadlines[i] < deadlines[jobIndex]) {
+          jobIndex = i;
+        }
       }
     }
-  }
-  // Serial.println(jobIndex);
-  switch (jobIndex) {
-    case 0: JobTask1(); break;
-    case 1: JobTask2(); break;
-    case 2: JobTask3(); break;
-    case 3: JobTask4(); break;
-    case 4: JobTask5(); break;
-    default: break;
-  }
+    // Serial.println(jobIndex);
+    switch (jobIndex) {
+      case 0: JobTask1(); break;
+      case 1: JobTask2(); break;
+      case 2: JobTask3(); break;
+      case 3: JobTask4(); break;
+      case 4: JobTask5(); break;
+      default:   break;
+    }
+  // }
 }
 
 

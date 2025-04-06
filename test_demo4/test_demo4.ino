@@ -70,49 +70,73 @@ void task2(void *param) {
   }
 }
 
-// --- Task 3 ---
+// --- Task 2 ---
 void task3(void *param) {
   const TickType_t xPeriod = pdMS_TO_TICKS(10);
   TickType_t xLastWakeTime = xTaskGetTickCount();
   while (1) {
     monitor.jobStarted(3);
-    while (digitalRead(INPUT_PIN_F1) == last_F1_input_state);
-    unsigned long now_edge = micros();
-    if (lastF1EdgeTime > 0) {
-      unsigned long period = now_edge - lastF1EdgeTime;
-      if (period > 0) {
-        int freq = 1000000 / period;
-        xQueueSend(freqQueue, &freq, 0);
-      }
-    }
-    lastF1EdgeTime = now_edge;
-    last_F1_input_state = digitalRead(INPUT_PIN_F1);
+    delayMicroseconds(3000);
     monitor.jobEnded(3);
     vTaskDelayUntil(&xLastWakeTime, xPeriod);
   }
 }
 
-// --- Task 4 ---
+
+// --- Task 2 ---
 void task4(void *param) {
   const TickType_t xPeriod = pdMS_TO_TICKS(10);
   TickType_t xLastWakeTime = xTaskGetTickCount();
   while (1) {
     monitor.jobStarted(4);
-    while (digitalRead(INPUT_PIN_F2) == last_F2_input_state);
-    unsigned long now_edge = micros();
-    if (lastF2EdgeTime > 0) {
-      unsigned long period = now_edge - lastF2EdgeTime;
-      if (period > 0) {
-        int freq = 1000000 / period;
-        xQueueSend(freqQueue, &freq, 0);
-      }
-    }
-    lastF2EdgeTime = now_edge;
-    last_F2_input_state = digitalRead(INPUT_PIN_F2);
+    delayMicroseconds(2200);
     monitor.jobEnded(4);
     vTaskDelayUntil(&xLastWakeTime, xPeriod);
   }
 }
+// // --- Task 3 ---
+// void task3(void *param) {
+//   const TickType_t xPeriod = pdMS_TO_TICKS(10);
+//   TickType_t xLastWakeTime = xTaskGetTickCount();
+//   while (1) {
+//     monitor.jobStarted(3);
+//     while (digitalRead(INPUT_PIN_F1) == last_F1_input_state);
+//     unsigned long now_edge = micros();
+//     if (lastF1EdgeTime > 0) {
+//       unsigned long period = now_edge - lastF1EdgeTime;
+//       if (period > 0) {
+//         int freq = 1000000 / period;
+//         xQueueSend(freqQueue, &freq, 0);
+//       }
+//     }
+//     lastF1EdgeTime = now_edge;
+//     last_F1_input_state = digitalRead(INPUT_PIN_F1);
+//     monitor.jobEnded(3);
+//     vTaskDelayUntil(&xLastWakeTime, xPeriod);
+//   }
+// }
+
+// --- Task 4 ---
+// void task4(void *param) {
+//   const TickType_t xPeriod = pdMS_TO_TICKS(10);
+//   TickType_t xLastWakeTime = xTaskGetTickCount();
+//   while (1) {
+//     monitor.jobStarted(4);
+//     while (digitalRead(INPUT_PIN_F2) == last_F2_input_state);
+//     unsigned long now_edge = micros();
+//     if (lastF2EdgeTime > 0) {
+//       unsigned long period = now_edge - lastF2EdgeTime;
+//       if (period > 0) {
+//         int freq = 1000000 / period;
+//         xQueueSend(freqQueue, &freq, 0);
+//       }
+//     }
+//     lastF2EdgeTime = now_edge;
+//     last_F2_input_state = digitalRead(INPUT_PIN_F2);
+//     monitor.jobEnded(4);
+//     vTaskDelayUntil(&xLastWakeTime, xPeriod);
+//   }
+// }
 
 // --- Task 5 ---
 void task5(void *param) {
@@ -156,12 +180,13 @@ void freqMonitorTask(void *param) {
         ledState = false;
       }
     }
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 }
 
 // --- Setup ---
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   pinMode(OUTPUT_PIN_1, OUTPUT);
   pinMode(OUTPUT_PIN_2, OUTPUT);
   pinMode(INPUT_PIN_F1, INPUT);
@@ -176,9 +201,9 @@ void setup() {
 
   monitor.startMonitoring();
 
-  xTaskCreatePinnedToCore(task1, "Task1", 2048, NULL, 1, &taskHandles[0], 0);
+  xTaskCreatePinnedToCore(task1, "Task1", 2048, NULL, 1, &taskHandles[0], 1);
   xTaskCreatePinnedToCore(task2, "Task2", 2048, NULL, 1, &taskHandles[1], 0);
-  xTaskCreatePinnedToCore(task3, "Task3", 2048, NULL, 1, &taskHandles[2], 1);
+  xTaskCreatePinnedToCore(task3, "Task3", 2048, NULL, 1, &taskHandles[2], 0);
   xTaskCreatePinnedToCore(task4, "Task4", 2048, NULL, 1, &taskHandles[3], 1);
   xTaskCreatePinnedToCore(task5, "Task5", 2048, NULL, 1, &taskHandles[4], 0);
   // xTaskCreatePinnedToCore(buttonTask, "Button", 2048, NULL, 1, NULL, 1);
