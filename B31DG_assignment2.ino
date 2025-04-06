@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "rtc_wdt.h"
 
-B31DGCyclicExecutiveMonitor monitor;
+
 
 
 #define OUTPUT_PIN_1 26
@@ -13,7 +13,7 @@ B31DGCyclicExecutiveMonitor monitor;
 #define LED_PIN 17 
 #define BUTTON_PIN 16
 #define DEBOUNCE_DELAY 100  
-
+B31DGCyclicExecutiveMonitor monitor;
 unsigned long startTimeTask3, endTimeTask3, periodTask3,startTimeTask4, endTimeTask4, periodTask4;
 unsigned long F1,F2,F;
 boolean ledState;
@@ -255,7 +255,8 @@ void setup(void)
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressedHandle, RISING);
-   delay(500);
+  // delay(500);
+  
    monitor.startMonitoring();
     
     // ticker1.attach_ms(4, task1);
@@ -266,7 +267,7 @@ void setup(void)
     // majorCycle.attach_ms(1, majorCycleISR);
   
   // monitor.startMonitoring(); // all the tasks should be released after this, this time can be queried using getTimeStart()
-  ticker1.attach_us(4000, task1);
+  // ticker1.attach_us(1000, task1);
   // ticker2.attach_us(3000, task2);
   // ticker3.attach_us(10000, task3);
   // ticker4.attach_us(10000, task4);
@@ -293,7 +294,7 @@ void setup(void)
 void loop(void) 
 {
   
-  //  task1();
+   task1();
   // Serial.println(112);
   // delay(10000);
     // if (flag) {

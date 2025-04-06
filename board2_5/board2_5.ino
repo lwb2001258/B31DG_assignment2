@@ -1,13 +1,14 @@
-#define PIN1 18   // 第一个方波输出
-#define PIN2 19   // 第二个方波输出
+// the code for generate square wave for task3 and task4
+#define PIN1 18   //the first pin for task3
+#define PIN2 19   //the second pin for task4
 
-// --- PIN1 参数 ---
+// set the parameters for first pin
 unsigned int freq1 = 666;
 bool increasing1 = true;
 unsigned long lastToggle1 = 0;
 bool state1 = LOW;
 
-// --- PIN2 参数 ---
+// set the parameters for second pin
 unsigned int freq2 = 833;
 bool increasing2 = true;
 unsigned long lastToggle2 = 0;
@@ -18,22 +19,19 @@ void setup() {
     pinMode(PIN2, OUTPUT);
 }
 
-// ========================
-//      主循环控制方波
-// ========================
 
 void loop() {
     unsigned long now = micros();
 
-    // ======== 方波1 ========
-    unsigned long halfPeriod1 = 1000000UL / (2 * freq1); // 单位：us
+    // first wave square wave
+    unsigned long halfPeriod1 = 1000000UL / (2 * freq1); 
     if (now - lastToggle1 >= halfPeriod1) {
         lastToggle1 = now;
         state1 = !state1;
         digitalWrite(PIN1, state1);
     }
 
-    // 频率调节
+   //change the frequency of first pin
     static unsigned long lastFreqUpdate1 = 0;
     if (millis() - lastFreqUpdate1 >= 10) { // 每10ms调节1Hz
         lastFreqUpdate1 = millis();
@@ -46,7 +44,7 @@ void loop() {
         }
     }
 
-    // ======== 方波2 ========
+    // second wave square wave
     unsigned long halfPeriod2 = 1000000UL / (2 * freq2);
     if (now - lastToggle2 >= halfPeriod2) {
         lastToggle2 = now;
@@ -54,9 +52,9 @@ void loop() {
         digitalWrite(PIN2, state2);
     }
 
-    // 频率调节
+       //change the frequency of second pin
     static unsigned long lastFreqUpdate2 = 0;
-    if (millis() - lastFreqUpdate2 >= 10) { // 每10ms调节1Hz
+    if (millis() - lastFreqUpdate2 >= 10) { 
         lastFreqUpdate2 = millis();
         if (increasing2) {
             freq2++;
@@ -67,5 +65,4 @@ void loop() {
         }
     }
 
-    // ====== loop() 会自动不停执行，无需额外延时 ======
 }

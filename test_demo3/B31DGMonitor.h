@@ -10,6 +10,7 @@
 class B31DGCyclicExecutiveMonitor {
 
 private:
+// public:
 
     boolean bActive = false;
 

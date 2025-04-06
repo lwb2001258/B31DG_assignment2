@@ -1,7 +1,5 @@
-#include "HardwareSerial.h"
 #include "Arduino.h"
 #include "B31DGMonitor.h"
-
 
 B31DGCyclicExecutiveMonitor::B31DGCyclicExecutiveMonitor(int offset)
 {
@@ -19,8 +17,8 @@ unsigned long B31DGCyclicExecutiveMonitor::startMonitoring()
 {
     this->bActive = true;
     // find the next deadlines
-
     timeStart = micros() + offset;
+
     for (int i=0; i< NUMBER_TASKS; i++) {
       this->timeFirstEnd[i] = 0;
       this->timeFirstBegin[i] = 0;
@@ -41,12 +39,10 @@ void B31DGCyclicExecutiveMonitor::jobStarted(int taskNumber)
 
   unsigned long now = micros();
   if (this->timeFirstBegin[taskNumber]==0) {
-
       this->timeFirstBegin[taskNumber] = now;
   }
 
   if ( (now - this->timeStart) > TEST_TIME) {
-
     this->printSummary();
     exit(0);
   }
@@ -69,31 +65,15 @@ void B31DGCyclicExecutiveMonitor::jobEnded(int taskNumber)
       this->timeFirstEnd[taskNumber] = now;
   }
 
-
   if ( (now - this->timeStart) > TEST_TIME) {
-    Serial.println("task1 end summary");
     this->printSummary();
     exit(0);
   }
 
   this->counterJobs[taskNumber]++;
 
-  // Serial.printf("this->offset");
-  // Serial.println(this->offset);
-  // Serial.printf("this->timeStart");
-  // Serial.println(this->timeStart);
-
-  if (now > (timeStart + (this->taskRateRequirements[taskNumber])*(this->counterJobs[taskNumber]))) {
-    // Serial.printf("now:");
-    // Serial.println(now);
-    // Serial.printf("this->counterJobs[taskNumber]:");
-    // Serial.println(this->counterJobs[taskNumber]);
-    // Serial.printf("this->timeStart");
-    // Serial.println(this->timeStart);
-    // Serial.printf("timeStart + (this->taskRateRequirements[taskNumber])*(this->counterJobs[taskNumber]):");
-    // Serial.println(timeStart + (this->taskRateRequirements[taskNumber])*(this->counterJobs[taskNumber]));
+  if (now > this->timeNextDeadlines[taskNumber]) {
     this->taskViolations[taskNumber]++; 
-    Serial.println("task1 violation");
   }
 
   this->timeRelease[taskNumber] = this->timeNextDeadlines[taskNumber];
