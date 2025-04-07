@@ -61,11 +61,8 @@ void B31DGCyclicExecutiveMonitor::jobEnded(int taskNumber) {
   }
 
   if ((now - this->timeStart) > TEST_TIME) {
-    if (!(this->hasPrinted)) {
-      this->hasPrinted=true;
-      this->printSummary();
-      exit(0);
-    }
+    this->printSummary();
+    exit(0);
   }
 
   this->counterJobs[taskNumber]++;

@@ -13,8 +13,7 @@ private:
 // public:
 
     boolean bActive = false;
-    volatile boolean hasPrinted = false;
-
+ 
     unsigned long timeStart = 0;  
     unsigned long timeRelease[NUMBER_TASKS];
     unsigned long timeNextDeadlines[NUMBER_TASKS];

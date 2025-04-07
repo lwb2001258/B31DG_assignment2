@@ -66,9 +66,7 @@ void frameTask(void* pvParameters) {
   TickType_t lastWakeTime = xTaskGetTickCount();
 
   while (true) {
-    frame();  // 原 ticker 回调函数
-
-    // 精确延时，保持周期性调度
+    frame();  
     vTaskDelayUntil(&lastWakeTime, interval);
   }
 }
@@ -87,212 +85,163 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
   pinMode(BUTTON_PIN, INPUT_PULLDOWN);
-  
+
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressedHandle, RISING);
   // ticker1.attach_ms(1, frame);
- 
+
   monitor.startMonitoring();
-  xTaskCreatePinnedToCore(frameTask, "FrameTask", 2048, NULL, 3, NULL, 0);
-  xTaskCreatePinnedToCore(doJob1, "doJob1", 2048, NULL, 3, NULL, 0);
-  xTaskCreatePinnedToCore(doJob2, "doJob2", 2048, NULL, 3, NULL, 1);
+  xTaskCreatePinnedToCore(frameTask, "FrameTask", 2048, NULL, 1, NULL, 0);
 }
 
 void loop() {
-  // xTaskCreatePinnedToCore(doJob,"doJob0",2048,NULL, 1, NULL,  0);
-  // xTaskCreatePinnedToCore(doJob,"doJob1",2048,NULL, 1, NULL,  1);
-  // doJob();
-}
-void doJob1(void* params) {
   // put your main code here, to run repeatedly:
-  TickType_t lastWakeTime = xTaskGetTickCount();
-  const TickType_t interval = pdMS_TO_TICKS(1);  // 每 5ms
-  while (1) {
-    int jobIndex = 10;
+  int jobIndex = 10;
 
 
-    for (int i = 0; i < 5; i++) {
-      if (i == 0 || i == 1 || i == 4) {
-        if (!doneList[i]) {
-          if (deadlines[i] < deadlines[jobIndex]) {
-            jobIndex = i;
-          }
-        }
+  for (int i = 0; i < 5; i++) {
+    if (!doneList[i]) {
+      if (deadlines[i] < deadlines[jobIndex]) {
+        jobIndex = i;
       }
     }
-    // Serial.println(jobIndex);
-    switch (jobIndex) {
-      case 0: JobTask1(); break;
-      case 1: JobTask2(); break;
-      case 2: JobTask3(); break;
-      case 3: JobTask4(); break;
-      case 4: JobTask5(); break;
-      default: break;
-    }
-    vTaskDelayUntil(&lastWakeTime, interval);
+  }
+  // Serial.println(jobIndex);
+  switch (jobIndex) {
+    case 0: JobTask1(); break;
+    case 1: JobTask2(); break;
+    case 2: JobTask3(); break;
+    case 3: JobTask4(); break;
+    case 4: JobTask5(); break;
+    default: break;
   }
 }
 
+void JobTask1(void) {
+  monitor.jobStarted(1);
+  digitalWrite(OUTPUT_PIN_1, HIGH);
+  delayMicroseconds(250);  // HIGH for 250μs
+  digitalWrite(OUTPUT_PIN_1, LOW);
+  delayMicroseconds(50);  // LOW for 50μs
+  digitalWrite(OUTPUT_PIN_1, HIGH);
+  delayMicroseconds(300);  // HIGH for 300μs
+  digitalWrite(OUTPUT_PIN_1, LOW);
+  doneList[0] = true;
+  jobCounts[0] = jobCounts[0] + 1;
+  monitor.jobEnded(1);
+}
 
-  void doJob2(void* params) {
-    // put your main code here, to run repeatedly:
-    // TickType_t lastWakeTime = xTaskGetTickCount();
-    // const TickType_t interval = pdMS_TO_TICKS(5);  // 每 5ms
-    while (1) {
-      int jobIndex = 10;
+// Task 2, takes 1.8ms
+void JobTask2(void) {
+  monitor.jobStarted(2);
+  digitalWrite(OUTPUT_PIN_2, HIGH);
+  delayMicroseconds(100);
+  digitalWrite(OUTPUT_PIN_2, LOW);
+  delayMicroseconds(50);
+  digitalWrite(OUTPUT_PIN_2, HIGH);
+  delayMicroseconds(200);
+  digitalWrite(OUTPUT_PIN_2, LOW);
+  doneList[1] = true;
+  jobCounts[1] = jobCounts[1] + 1;
+  monitor.jobEnded(2);
+}
 
 
-      for (int i = 0; i < 5; i++) {
-        if (i == 2 || i == 3) {
-          if (!doneList[i]) {
-            if (deadlines[i] < deadlines[jobIndex]) {
-              jobIndex = i;
-            }
-          }
+// Task 3, takes 1ms
+void JobTask3(void) {
+  monitor.jobStarted(3);
+  int count = 0;
+  // unsigned long start = micros();
+  while (1) {
+    // taskENTER_CRITICAL(&myMux);
+    bool input_state = digitalRead(INPUT_PIN_F1);
+    if (last_F1_input_state == LOW && input_state == LOW) {
+      last_F1_input_state = input_state;
+      continue;
+    } else if (last_F1_input_state == HIGH && input_state == HIGH) {
+      last_F1_input_state = input_state;
+      continue;
+    } else if (last_F1_input_state == HIGH && input_state == LOW) {
+      last_F1_input_state = input_state;
+      continue;
+    } else if (input_state == HIGH && last_F1_input_state == LOW) {
+      count = count + 1;
+      last_F1_input_state = input_state;
+      unsigned long now_edge = esp_timer_get_time();
+      ;
+      unsigned long period = now_edge - lastF1EdgeTime;
+      lastF1EdgeTime = now_edge;
+      if (period > 0 && count > 1) {
+        F1 = 1000000UL / period;
+        F = F1 + F2;
+        if (F > 1600) {
+          digitalWrite(LED_PIN, HIGH);
+          ledState = true;
+        } else {
+          digitalWrite(LED_PIN, LOW);
+          ledState = false;
         }
+        // taskEXIT_CRITICAL(&myMux);
+        break;
       }
-      // Serial.println(jobIndex);
-      switch (jobIndex) {
-        case 0: JobTask1(); break;
-        case 1: JobTask2(); break;
-        case 2: JobTask3(); break;
-        case 3: JobTask4(); break;
-        case 4: JobTask5(); break;
-        default:  break;
-      }
-      vTaskDelay(pdMS_TO_TICKS(1));
-      // vTaskDelayUntil(&lastWakeTime, interval);
     }
   }
+  // if (jobCounts[2]%100==0){
+  //   Serial.println(F2);
+  // }
+  doneList[2] = true;
+  jobCounts[2] = jobCounts[2] + 1;
+  monitor.jobEnded(3);
+}
 
-
-
-
-
-    void JobTask1(void) {
-      monitor.jobStarted(1);
-      digitalWrite(OUTPUT_PIN_1, HIGH);
-      delayMicroseconds(250);  // HIGH for 250μs
-      digitalWrite(OUTPUT_PIN_1, LOW);
-      delayMicroseconds(50);  // LOW for 50μs
-      digitalWrite(OUTPUT_PIN_1, HIGH);
-      delayMicroseconds(300);  // HIGH for 300μs
-      digitalWrite(OUTPUT_PIN_1, LOW);
-      doneList[0] = true;
-      jobCounts[0] = jobCounts[0] + 1;
-      monitor.jobEnded(1);
-    }
-
-    // Task 2, takes 1.8ms
-    void JobTask2(void) {
-      monitor.jobStarted(2);
-      digitalWrite(OUTPUT_PIN_2, HIGH);
-      delayMicroseconds(100);
-      digitalWrite(OUTPUT_PIN_2, LOW);
-      delayMicroseconds(50);
-      digitalWrite(OUTPUT_PIN_2, HIGH);
-      delayMicroseconds(200);
-      digitalWrite(OUTPUT_PIN_2, LOW);
-      doneList[1] = true;
-      jobCounts[1] = jobCounts[1] + 1;
-      monitor.jobEnded(2);
-    }
-
-
-    // Task 3, takes 1ms
-    void JobTask3(void) {
-      monitor.jobStarted(3);
-      int count = 0;
-      // unsigned long start = micros();
-      while (1) {
-        // taskENTER_CRITICAL(&myMux);    
-        bool input_state = digitalRead(INPUT_PIN_F1);
-        if (last_F1_input_state == LOW && input_state == LOW) {
-          last_F1_input_state = input_state;
-          continue;
-        } else if (last_F1_input_state == HIGH && input_state == HIGH) {
-          last_F1_input_state = input_state;
-          continue;
-        } else if (last_F1_input_state == HIGH && input_state == LOW) {
-          last_F1_input_state = input_state;
-          continue;
-        } else if (input_state == HIGH && last_F1_input_state == LOW) {
-          count = count + 1;
-          last_F1_input_state = input_state;
-          unsigned long now_edge = esp_timer_get_time();;
-          unsigned long period = now_edge - lastF1EdgeTime;
-          lastF1EdgeTime = now_edge;
-          if (period > 0 && count > 1) {
-            F1 = 1000000UL / period;
-            F = F1 + F2;
-            if (F > 1600) {
-              digitalWrite(LED_PIN, HIGH);
-              ledState = true;
-            } else {
-              digitalWrite(LED_PIN, LOW);
-              ledState = false;
-            }
-            // taskEXIT_CRITICAL(&myMux);  
-            break;
-          }
+// Task 4, takes about 600-2200us
+void JobTask4(void) {
+  monitor.jobStarted(4);
+  // unsigned long start = micros();
+  int count = 0;
+  while (1) {
+    // taskENTER_CRITICAL(&myMux);
+    bool input_state = digitalRead(INPUT_PIN_F2);
+    if (last_F2_input_state == LOW && input_state == LOW) {
+      last_F2_input_state = input_state;
+      continue;
+    } else if (last_F2_input_state == HIGH && input_state == HIGH) {
+      last_F2_input_state = input_state;
+      continue;
+    } else if (last_F2_input_state == HIGH && input_state == LOW) {
+      last_F2_input_state = input_state;
+      continue;
+    } else if (input_state == HIGH && last_F2_input_state == LOW) {
+      count = count + 1;
+      last_F2_input_state = input_state;
+      unsigned long now_edge = esp_timer_get_time();
+      unsigned long period = now_edge - lastF2EdgeTime;
+      lastF2EdgeTime = now_edge;
+      if (period > 0 && count > 1) {
+        F2 = 1000000UL / period;  // 计算测得的频率
+        F = F2 + F2;
+        if (F > 1500) {
+          digitalWrite(LED_PIN, HIGH);
+          ledState = true;
+        } else {
+          digitalWrite(LED_PIN, LOW);
+          ledState = false;
         }
+        // taskEXIT_CRITICAL(&myMux);
+        break;
       }
-      // if (jobCounts[2]%100==0){
-      //   Serial.println(F2);
-      // }
-      doneList[2] = true;
-      jobCounts[2] = jobCounts[2] + 1;
-      monitor.jobEnded(3);
     }
-
-    // Task 4, takes about 600-2200us
-    void JobTask4(void) {
-      monitor.jobStarted(4);
-      // unsigned long start = micros();
-      int count = 0;
-      while (1) {
-        // taskENTER_CRITICAL(&myMux); 
-        bool input_state = digitalRead(INPUT_PIN_F2);
-        if (last_F2_input_state == LOW && input_state == LOW) {
-          last_F2_input_state = input_state;
-          continue;
-        } else if (last_F2_input_state == HIGH && input_state == HIGH) {
-          last_F2_input_state = input_state;
-          continue;
-        } else if (last_F2_input_state == HIGH && input_state == LOW) {
-          last_F2_input_state = input_state;
-          continue;
-        } else if (input_state == HIGH && last_F2_input_state == LOW) {
-          count = count + 1;
-          last_F2_input_state = input_state;
-          unsigned long now_edge = esp_timer_get_time();
-          unsigned long period = now_edge - lastF2EdgeTime;
-          lastF2EdgeTime = now_edge;
-          if (period > 0 && count > 1) {
-            F2 = 1000000UL / period;  // 计算测得的频率
-            F = F2 + F2;
-            if (F > 1500) {
-              digitalWrite(LED_PIN, HIGH);
-              ledState = true;
-            } else {
-              digitalWrite(LED_PIN, LOW);
-              ledState = false;
-            }
-            // taskEXIT_CRITICAL(&myMux); 
-            break;
-          }
-        }
-      }
-      doneList[3] = true;
-      jobCounts[3] = jobCounts[3] + 1;
-      monitor.jobEnded(4);
-    }
+  }
+  doneList[3] = true;
+  jobCounts[3] = jobCounts[3] + 1;
+  monitor.jobEnded(4);
+}
 
 
-    // Task 5, takes 0.5ms
-    void JobTask5(void) {
-      monitor.jobStarted(5);
-      monitor.doWork();
-      doneList[4] = true;
-      jobCounts[4] = jobCounts[4] + 1;
-      monitor.jobEnded(5);
-    }
+// Task 5, takes 0.5ms
+void JobTask5(void) {
+  monitor.jobStarted(5);
+  monitor.doWork();
+  doneList[4] = true;
+  jobCounts[4] = jobCounts[4] + 1;
+  monitor.jobEnded(5);
+}
