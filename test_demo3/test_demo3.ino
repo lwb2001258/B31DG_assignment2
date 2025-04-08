@@ -3,7 +3,6 @@
 #include <freertos/task.h>
 #include <freertos/queue.h>
 #include <freertos/semphr.h>
-#include <Ticker.h>
 #include "esp_timer.h"
 #define OUTPUT_PIN_1 26
 #define OUTPUT_PIN_2 27
@@ -13,17 +12,22 @@
 #define BUTTON_PIN 16
 #define DEBOUNCE_DELAY 100
 B31DGCyclicExecutiveMonitor monitor;
+#define OUTPUT_PIN_1 26
+#define OUTPUT_PIN_2 27
+#define INPUT_PIN_F1 25
+#define INPUT_PIN_F2 33
+#define LED_PIN 17
+#define BUTTON_PIN 16
+#define BUTTON_LED_PIN 32
+#define DEBOUNCE_DELAY 500
+B31DGCyclicExecutiveMonitor monitor;
 Ticker ticker1;
-unsigned long F1, F2, F;
-boolean ledState;
+unsigned long F1, F2, F,lastF1EdgeTime,lastF2EdgeTime;
 volatile uint64_t lastButtonInterruptTime = 0;
-unsigned long lastF1EdgeTime = 0;
-unsigned long lastF2EdgeTime = 0;
-volatile bool flag = false;
 static bool last_F1_input_state = LOW;
 static bool last_F2_input_state = LOW;
 unsigned long startTimeTask3, periodTask3, endTimeTask3, startTimeTask4, periodTask4, endTimeTask4 = 0;
-portMUX_TYPE myMux = portMUX_INITIALIZER_UNLOCKED;
+volatile bool ButtonLedState = false;
 
 
 int deadlines[5] = { 3400, 2650, 7200, 7800, 4500 };
@@ -47,14 +51,7 @@ void frame() {
 void IRAM_ATTR buttonPressedHandle() {
   unsigned long currentTime = millis();
   if (currentTime - lastButtonInterruptTime > DEBOUNCE_DELAY) {
-    Serial.println("interrupt");
-    // toggle the enable state when the enable button is pressed
-    if (ledState) {
-      digitalWrite(LED_PIN, LOW);
-    } else {
-      digitalWrite(LED_PIN, HIGH);
-    }
-    ledState = !ledState;
+    ButtonLedState = !ButtonLedState;
     monitor.doWork();
     //update the lastEnableInterruptTime value
     lastButtonInterruptTime = currentTime;
@@ -83,18 +80,24 @@ void setup() {
   pinMode(INPUT_PIN_F1, INPUT);
   pinMode(INPUT_PIN_F2, INPUT);
   pinMode(LED_PIN, OUTPUT);
+  pinMode(BUTTON_LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
+  digitalWrite(BUTTON_LED_PIN, LOW);
   pinMode(BUTTON_PIN, INPUT_PULLDOWN);
-
-  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), buttonPressedHandle, RISING);
-  // ticker1.attach_ms(1, frame);
-
   monitor.startMonitoring();
   xTaskCreatePinnedToCore(frameTask, "FrameTask", 2048, NULL, 1, NULL, 0);
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+ 
+    // put your main code here, to run repeatedly:
+  if (ButtonLedState){
+    digitalWrite(BUTTON_LED_PIN, HIGH);
+  }else{
+    digitalWrite(BUTTON_LED_PIN, LOW);
+  }
+
   int jobIndex = 10;
 
 
@@ -175,10 +178,8 @@ void JobTask3(void) {
         F = F1 + F2;
         if (F > 1600) {
           digitalWrite(LED_PIN, HIGH);
-          ledState = true;
         } else {
           digitalWrite(LED_PIN, LOW);
-          ledState = false;
         }
         // taskEXIT_CRITICAL(&myMux);
         break;
@@ -221,12 +222,9 @@ void JobTask4(void) {
         F = F2 + F2;
         if (F > 1500) {
           digitalWrite(LED_PIN, HIGH);
-          ledState = true;
         } else {
           digitalWrite(LED_PIN, LOW);
-          ledState = false;
         }
-        // taskEXIT_CRITICAL(&myMux);
         break;
       }
     }
